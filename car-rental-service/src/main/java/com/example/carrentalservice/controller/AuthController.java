@@ -36,6 +36,19 @@ public class AuthController {
         return ResponseEntity.ok(userService.createUser(userDto));
     }
 
+    @Operation(
+            summary = "Login user",
+            description = "Authenticate user with username and password"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "User logged in successfully",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))
+    )
+    @ApiResponse(
+            responseCode = "401",
+            description = "Invalid credentials"
+    )
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
         try {
@@ -48,6 +61,14 @@ public class AuthController {
         }
     }
 
+    @Operation(
+            summary = "Logout user",
+            description = "Invalidate the current user session"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "User logged out successfully"
+    )
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
         authService.logout();

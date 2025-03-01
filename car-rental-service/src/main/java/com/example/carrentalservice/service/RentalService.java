@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,6 +54,21 @@ public class RentalService {
         Rental rental = rentalMapper.toEntity(rentalDto);
         rental.setUser(user);
         rental.setCar(car);
+
+        // Set default status if not provided
+        if (rental.getRentalStatus() == null) {
+            rental.setRentalStatus(com.example.carrentalservice.entity.RentalStatus.PENDING);
+        }
+
+        // Calculate rental price if not provided
+        if (rental.getPrice() == null || rental.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            // Simple price calculation based on car's daily rate and rental duration
+            java.time.temporal.ChronoUnit.DAYS.between(rental.getStartDate(), rental.getEndDate());
+            long days = java.time.temporal.ChronoUnit.DAYS.between(rental.getStartDate(), rental.getEndDate());
+            if (days < 1) days = 1; // Minimum 1 day rental
+
+            rental.setPrice(car.getPrice().multiply(new BigDecimal(days)));
+        }
 
         Rental savedRental = rentalRepository.save(rental);
         return rentalMapper.toDto(savedRental);

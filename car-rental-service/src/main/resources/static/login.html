@@ -80,6 +80,7 @@
                         console.log('Login successful:', data);
 
                         // Store user data in localStorage
+                        localStorage.setItem('token', data.token); // Store the token
                         localStorage.setItem('username', data.username);
                         localStorage.setItem('role', data.role);
 

@@ -33,7 +33,8 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index.html", "/login.html", "/register.html").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/*.ico").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
+                        // OpenAPI swagger endpoints
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**").permitAll()
                         .requestMatchers("/api/cars/**", "/cars.html").permitAll()
                         // For any other request, require authentication
                         .anyRequest().authenticated()

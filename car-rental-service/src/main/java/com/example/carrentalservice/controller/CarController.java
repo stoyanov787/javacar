@@ -2,6 +2,7 @@ package com.example.carrentalservice.controller;
 
 import com.example.carrentalservice.dto.CarDto;
 import com.example.carrentalservice.service.CarService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/cars")
 @RequiredArgsConstructor
+@Tag(name = "Car Management", description = "APIs for car operations")
 public class CarController {
     private final CarService carService;
 

@@ -133,37 +133,33 @@
     document.getElementById('rentalForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        // Get the current user ID or use a default value if not available
+        const userId = localStorage.getItem('userId') || 1; // Default to user ID 1 if not found
+
         const rentalData = {
-            carId: document.getElementById('carId').value,
+            userId: parseInt(userId),
+            carId: parseInt(document.getElementById('carId').value),
             startDate: document.getElementById('startDate').value,
-            endDate: document.getElementById('endDate').value
+            endDate: document.getElementById('endDate').value,
+            price: 100.00, // Default price, should be calculated based on car and dates
+            rentalStatus: "PENDING" // Default status for new rentals
         };
 
         const rentalId = document.getElementById('rentalId').value;
         const method = rentalId ? 'PUT' : 'POST';
         const url = rentalId ? `/api/rentals/${rentalId}` : '/api/rentals';
 
+        const token = localStorage.getItem('token');
+
         try {
             const response = await fetch(url, {
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(rentalData)
             });
-
-            if (response.ok) {
-                document.getElementById('rentalModal').classList.add('hidden');
-                loadRentals();
-            } else {
-                const error = await response.json();
-                alert(error.message || 'Failed to save rental');
-            }
-        } catch (error) {
-            console.error('Error saving rental:', error);
-            alert('An error occurred while saving the rental');
-        }
-    });
 
     // Edit rental
     async function editRental(id) {

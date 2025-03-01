@@ -34,7 +34,7 @@ public class RentalController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<RentalDto> createRental(@RequestBody RentalDto rentalDto) {
         return ResponseEntity.ok(rentalService.createRental(rentalDto));
     }

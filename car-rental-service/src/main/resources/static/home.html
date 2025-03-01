@@ -123,62 +123,89 @@
   // Load stats
   async function loadStats() {
     try {
+      // Since we don't have a stats endpoint yet, we'll calculate from rentals and cars
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          window.location.href = '/login.html';
-          return;
+      // Get active rentals count
+      let activeRentals = 0;
+      try {
+        const rentalsResponse = await fetch('/api/rentals', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (rentalsResponse.ok) {
+          const rentals = await rentalsResponse.json();
+          activeRentals = rentals.filter(rental => rental.rentalStatus === 'ACTIVE').length;
         }
-        throw new Error('Failed to load stats');
+      } catch (e) {
+        console.error('Error fetching rentals:', e);
       }
 
-      const stats = await response.json();
-      document.getElementById('activeRentals').textContent = stats.activeRentals || '0';
-      document.getElementById('availableCars').textContent = stats.availableCars || '0';
+      // Get total cars count
+      let availableCars = 0;
+      try {
+        const carsResponse = await fetch('/api/cars');
+        if (carsResponse.ok) {
+          const cars = await carsResponse.json();
+          availableCars = cars.length;
+        }
+      } catch (e) {
+        console.error('Error fetching cars:', e);
+      }
+
+      document.getElementById('activeRentals').textContent = activeRentals;
+      document.getElementById('availableCars').textContent = availableCars;
     } catch (error) {
       console.error('Error loading stats:', error);
-      document.getElementById('activeRentals').textContent = 'Error';
-      document.getElementById('availableCars').textContent = 'Error';
+      document.getElementById('activeRentals').textContent = '0';
+      document.getElementById('availableCars').textContent = '0';
     }
   }
 
   // Load recent activity
   async function loadRecentActivity() {
     try {
+      // Since we don't have a recent activities endpoint yet, we'll use rentals
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/rentals/recent', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          window.location.href = '/login.html';
+      try {
+        const rentalsResponse = await fetch('/api/rentals', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (rentalsResponse.ok) {
+          const rentals = await rentalsResponse.json();
+          // Convert rentals to activity format
+          const activities = rentals.slice(0, 3).map(rental => ({
+            type: `Rental #${rental.id}`,
+            description: `Status: ${rental.rentalStatus}`,
+            date: new Date(rental.startDate).toLocaleDateString()
+          }));
+
+          const activitiesHtml = activities.map(activity => `
+            <div class="text-sm">
+                <p class="font-semibold">${activity.type}</p>
+                <p class="text-gray-600">${activity.description}</p>
+                <p class="text-gray-400 text-xs">${activity.date}</p>
+            </div>
+          `).join('');
+
+          document.getElementById('recentActivity').innerHTML = activitiesHtml || '<div class="text-gray-500">No recent activity</div>';
           return;
         }
-        throw new Error('Failed to load recent activity');
+      } catch (e) {
+        console.error('Error fetching rentals for activity:', e);
       }
 
-      const activities = await response.json();
-      const activitiesHtml = activities.map(activity => `
-                <div class="text-sm">
-                    <p class="font-semibold">${activity.type}</p>
-                    <p class="text-gray-600">${activity.description}</p>
-                    <p class="text-gray-400 text-xs">${activity.date}</p>
-                </div>
-            `).join('');
-
-      document.getElementById('recentActivity').innerHTML = activitiesHtml || '<div class="text-gray-500">No recent activity</div>';
+      // Fallback content if fetch fails
+      document.getElementById('recentActivity').innerHTML = '<div class="text-gray-500">No recent activity to display</div>';
     } catch (error) {
       console.error('Error loading recent activity:', error);
-      document.getElementById('recentActivity').innerHTML = '<div class="text-red-500">Error loading activity</div>';
+      document.getElementById('recentActivity').innerHTML = '<div class="text-gray-500">No recent activity to display</div>';
     }
   }
 
