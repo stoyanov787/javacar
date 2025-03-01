@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Rental - Login</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+<div class="min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-96">
+        <h2 class="text-2xl font-bold mb-6 text-center">Car Rental Login</h2>
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                <input type="text" id="username" name="username" required
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="password" name="password" required
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            <div id="loginError" class="text-red-500 text-sm hidden">
+                Invalid username or password. Please try again.
+            </div>
+            <button type="submit" id="loginButton"
+                    class="w-full bg-blue-500 text-white rounded-md py-2 px-4 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Login
+            </button>
+        </form>
+        <div class="mt-4 text-center">
+            <a href="register.html" class="text-sm text-blue-500 hover:text-blue-700">Don't have an account? Register</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Add a console log when page loads to verify script execution
+    console.log('Login page loaded');
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM fully loaded');
+
+        // Get form element
+        const loginForm = document.getElementById('loginForm');
+        console.log('Login form element:', loginForm);
+
+        if (loginForm) {
+            // Add event listener for form submit
+            loginForm.addEventListener('submit', async function(e) {
+                console.log('Form submit event triggered');
+                e.preventDefault();
+
+                // Hide any previous error
+                const loginError = document.getElementById('loginError');
+                if (loginError) {
+                    loginError.classList.add('hidden');
+                }
+
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                console.log('Attempting login for user:', username);
+
+                try {
+                    console.log('Sending fetch request to /api/auth/login');
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    console.log('Response received:', response.status);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Login successful:', data);
+
+                        // Store user data in localStorage
+                        localStorage.setItem('username', data.username);
+                        localStorage.setItem('role', data.role);
+
+                        // Redirect to home page
+                        console.log('Redirecting to home page');
+                        window.location.href = '/home.html';
+                    } else {
+                        console.error('Login failed:', response.status);
+                        if (loginError) {
+                            loginError.classList.remove('hidden');
+                        }
+
+                        // Try to get more details about the error
+                        try {
+                            const errorData = await response.json();
+                            console.error('Error details:', errorData);
+                        } catch (parseError) {
+                            console.error('Could not parse error response');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    if (loginError) {
+                        loginError.classList.remove('hidden');
+                    }
+                }
+            });
+
+            // Add an additional click handler for the button as a fallback
+            const loginButton = document.getElementById('loginButton');
+            if (loginButton) {
+                console.log('Login button found, adding click handler');
+                loginButton.addEventListener('click', function(e) {
+                    console.log('Login button clicked');
+                    // The form submit handler should handle this, but just in case
+                    if (!e.defaultPrevented) {
+                        loginForm.dispatchEvent(new Event('submit'));
+                    }
+                });
+            }
+        } else {
+            console.error('Could not find login form element!');
+        }
+    });
+</script>
+</body>
+</html>

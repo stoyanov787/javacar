@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Car Rental - Home</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+<nav class="bg-white shadow-lg">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex justify-between">
+      <div class="flex space-x-7">
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="home.html" class="py-4 px-2 text-blue-500 border-b-4 border-blue-500 font-semibold">Home</a>
+          <a href="cars.html" class="py-4 px-2 text-gray-500 font-semibold hover:text-blue-500 transition duration-300">Cars</a>
+          <a href="rentals.html" class="py-4 px-2 text-gray-500 font-semibold hover:text-blue-500 transition duration-300">Rentals</a>
+          <a href="services.html" class="py-4 px-2 text-gray-500 font-semibold hover:text-blue-500 transition duration-300">Services</a>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span id="userUsername" class="py-2 px-2 font-medium text-gray-500"></span>
+        <a href="profile.html" class="py-2 px-2 font-medium text-gray-500 rounded hover:text-blue-500 transition duration-300">Profile</a>
+        <button id="logoutBtn" class="py-2 px-2 font-medium text-white bg-blue-500 rounded hover:bg-blue-400 transition duration-300">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="container mx-auto px-4 py-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Featured Cars Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-4">Featured Cars</h2>
+      <div id="featuredCars" class="space-y-4">
+        <!-- Cars will be loaded here -->
+        <div class="text-gray-500">Loading featured cars...</div>
+      </div>
+    </div>
+
+    <!-- Quick Stats Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-4">Quick Stats</h2>
+      <div class="space-y-4">
+        <div class="flex justify-between">
+          <span>Active Rentals:</span>
+          <span id="activeRentals">Loading...</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Available Cars:</span>
+          <span id="availableCars">Loading...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-4">Recent Activity</h2>
+      <div id="recentActivity" class="space-y-4">
+        <!-- Activity will be loaded here -->
+        <div class="text-gray-500">Loading recent activity...</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // Check authentication on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/login.html';
+      return;
+    }
+
+    // Display username if available
+    const username = localStorage.getItem('username');
+    if (username) {
+      document.getElementById('userUsername').textContent = username;
+    }
+
+    // Load all data
+    loadFeaturedCars();
+    loadStats();
+    loadRecentActivity();
+  });
+
+  // Load featured cars
+  async function loadFeaturedCars() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/cars', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
+        throw new Error('Failed to load cars');
+      }
+
+      const cars = await response.json();
+      const featuredCarsHtml = cars.slice(0, 3).map(car => `
+                <div class="border-b pb-2">
+                    <h3 class="font-semibold">${car.brand} ${car.model}</h3>
+                    <p class="text-sm text-gray-600">Year: ${car.year}</p>
+                    <p class="text-sm text-gray-600">Price: $${car.price}/day</p>
+                </div>
+            `).join('');
+
+      document.getElementById('featuredCars').innerHTML = featuredCarsHtml || '<div class="text-gray-500">No cars available</div>';
+    } catch (error) {
+      console.error('Error loading featured cars:', error);
+      document.getElementById('featuredCars').innerHTML = '<div class="text-red-500">Error loading cars</div>';
+    }
+  }
+
+  // Load stats
+  async function loadStats() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
+        throw new Error('Failed to load stats');
+      }
+
+      const stats = await response.json();
+      document.getElementById('activeRentals').textContent = stats.activeRentals || '0';
+      document.getElementById('availableCars').textContent = stats.availableCars || '0';
+    } catch (error) {
+      console.error('Error loading stats:', error);
+      document.getElementById('activeRentals').textContent = 'Error';
+      document.getElementById('availableCars').textContent = 'Error';
+    }
+  }
+
+  // Load recent activity
+  async function loadRecentActivity() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/rentals/recent', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
+        throw new Error('Failed to load recent activity');
+      }
+
+      const activities = await response.json();
+      const activitiesHtml = activities.map(activity => `
+                <div class="text-sm">
+                    <p class="font-semibold">${activity.type}</p>
+                    <p class="text-gray-600">${activity.description}</p>
+                    <p class="text-gray-400 text-xs">${activity.date}</p>
+                </div>
+            `).join('');
+
+      document.getElementById('recentActivity').innerHTML = activitiesHtml || '<div class="text-gray-500">No recent activity</div>';
+    } catch (error) {
+      console.error('Error loading recent activity:', error);
+      document.getElementById('recentActivity').innerHTML = '<div class="text-red-500">Error loading activity</div>';
+    }
+  }
+
+  // Logout functionality
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      // Clear local storage regardless of response
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+
+      window.location.href = '/login.html';
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Still redirect to login page even if there's an error
+      window.location.href = '/login.html';
+    }
+  });
+</script>
+</body>
+</html>

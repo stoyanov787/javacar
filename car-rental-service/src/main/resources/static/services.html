@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Rental - Services</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+<nav class="bg-white shadow-lg">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="flex justify-between">
+            <div class="flex space-x-7">
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="home.html" class="py-4 px-2 text-gray-500 font-semibold hover:text-blue-500 transition duration-300">Home</a>
+                    <a href="cars.html" class="py-4 px-2 text-gray-500 font-semibold hover:text-blue-500 transition duration-300">Cars</a>
+                    <a href="rentals.html" class="py-4 px-2 text-gray-500 font-semibold hover:text-blue-500 transition duration-300">Rentals</a>
+                    <a href="services.html" class="py-4 px-2 text-blue-500 border-b-4 border-blue-500 font-semibold">Services</a>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="profile.html" class="py-2 px-2 font-medium text-gray-500 rounded hover:text-blue-500 transition duration-300">Profile</a>
+                <button id="logoutBtn" class="py-2 px-2 font-medium text-white bg-blue-500 rounded hover:bg-blue-400 transition duration-300">Logout</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Service Management</h1>
+        <button id="addServiceBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add New Service</button>
+    </div>
+
+    <!-- Services List -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="servicesList">
+        <!-- Services will be loaded here -->
+    </div>
+
+    <!-- Add/Edit Service Modal -->
+    <div id="serviceModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h2 class="text-lg font-medium text-gray-900" id="modalTitle">Add New Service</h2>
+                <form id="serviceForm" class="mt-4">
+                    <input type="hidden" id="serviceId">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Service Name</label>
+                        <input type="text" id="name" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                        <textarea id="description" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="3"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Price</label>
+                        <input type="number" id="price" step="0.01" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div class="flex justify-end space-x-4">
+                        <button type="button" id="cancelBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Service to Car Modal -->
+    <div id="assignServiceModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h2 class="text-lg font-medium text-gray-900">Assign Service to Car</h2>
+                <form id="assignServiceForm" class="mt-4">
+                    <input type="hidden" id="assignServiceId">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Select Car</label>
+                        <select id="carId" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <!-- Cars will be loaded here -->
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-4">
+                        <button type="button" id="assignCancelBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Assign</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Check authentication on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const role = localStorage.getItem('role');
+        if (role !== 'ADMIN') {
+            document.getElementById('addServiceBtn').style.display = 'none';
+        }
+        loadServices();
+    });
+
+    async function loadServices() {
+        try {
+            const response = await fetch('/api/services', {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const services = await response.json();
+            const servicesListElement = document.getElementById('servicesList');
+
+            if (services.length === 0) {
+                servicesListElement.innerHTML = '<div class="col-span-3 text-center py-4">No services found</div>';
+                return;
+            }
+
+            servicesListElement.innerHTML = services.map(service => `
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-4">
+                        <h3 class="text-xl font-semibold">${service.name}</h3>
+                        <p class="text-gray-600">${service.description || 'No description'}</p>
+                        <p class="text-gray-600 font-bold">Price: $${service.price}</p>
+                        <div class="mt-4 flex justify-end space-x-2">
+                            ${localStorage.getItem('role') === 'ADMIN' ? `
+                            <button onclick="assignService(${service.id})" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Assign to Car</button>
+                            <button onclick="editService(${service.id})" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Edit</button>
+                            <button onclick="deleteService(${service.id})" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading services:', error);
+        }
+    }
+
+    // Show modal for adding new service
+    document.getElementById('addServiceBtn').addEventListener('click', () => {
+        document.getElementById('modalTitle').textContent = 'Add New Service';
+        document.getElementById('serviceId').value = '';
+        document.getElementById('serviceForm').reset();
+        document.getElementById('serviceModal').classList.remove('hidden');
+    });
+
+    // Hide modal
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+        document.getElementById('serviceModal').classList.add('hidden');
+    });
+
+    // Handle form submission
+    document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const serviceData = {
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
+            price: parseFloat(document.getElementById('price').value)
+        };
+
+        const serviceId = document.getElementById('serviceId').value;
+        const method = serviceId ? 'PUT' : 'POST';
+        const url = serviceId ? `/api/services/${serviceId}` : '/api/services';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(serviceData)
+            });
+
+            if (response.ok) {
+                document.getElementById('serviceModal').classList.add('hidden');
+                loadServices();
+            } else {
+                const error = await response.json();
+                alert(error.message || 'Failed to save service');
+            }
+        } catch (error) {
+            console.error('Error saving service:', error);
+            alert('An error occurred while saving the service');
+        }
+    });
+
+    // Edit service
+    async function editService(id) {
+        try {
+            const response = await fetch(`/api/services/${id}`);
+            const service = await response.json();
+
+            document.getElementById('modalTitle').textContent = 'Edit Service';
+            document.getElementById('serviceId').value = service.id;
+            document.getElementById('name').value = service.name;
+            document.getElementById('description').value = service.description || '';
+            document.getElementById('price').value = service.price;
+            document.getElementById('serviceModal').classList.remove('hidden');
+        } catch (error) {
+            console.error('Error getting service details:', error);
+        }
+    }
+
+    // Delete service
+    async function deleteService(id) {
+        if (confirm('Are you sure you want to delete this service?')) {
+            try {
+                const response = await fetch(`/api/services/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadServices();
+                } else {
+                    const error = await response.json();
+                    alert(error.message || 'Failed to delete service');
+                }
+            } catch (error) {
+                console.error('Error deleting service:', error);
+                alert('An error occurred while deleting the service');
+            }
+        }
+    }
+
+    // Assign service to car
+    async function assignService(id) {
+        document.getElementById('assignServiceId').value = id;
+
+        // Load cars for dropdown
+        try {
+            const response = await fetch('/api/cars');
+            const cars = await response.json();
+
+            document.getElementById('carId').innerHTML = cars.map(car =>
+                `<option value="${car.id}">${car.brand} ${car.model} (${car.year})</option>`
+            ).join('');
+
+            document.getElementById('assignServiceModal').classList.remove('hidden');
+        } catch (error) {
+            console.error('Error loading cars:', error);
+        }
+    }
+
+    // Hide assign modal
+    document.getElementById('assignCancelBtn').addEventListener('click', () => {
+        document.getElementById('assignServiceModal').classList.add('hidden');
+    });
+
+    // Handle assign form submission
+    document.getElementById('assignServiceForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const serviceId = document.getElementById('assignServiceId').value;
+        const carId = document.getElementById('carId').value;
+
+        try {
+            const response = await fetch(`/api/services/${serviceId}/cars/${carId}`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                document.getElementById('assignServiceModal').classList.add('hidden');
+                alert('Service assigned to car successfully');
+            } else {
+                const error = await response.json();
+                alert(error.message || 'Failed to assign service to car');
+            }
+        } catch (error) {
+            console.error('Error assigning service:', error);
+            alert('An error occurred while assigning the service');
+        }
+    });
+
+    // Logout functionality
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            localStorage.removeItem('role');
+            localStorage.removeItem('username');
+            window.location.href = '/login.html';
+        } catch (error) {
+            console.error('Error during logout:', error);
+            // Still redirect to login page even if there's an error
+            window.location.href = '/login.html';
+        }
+    });
+</script>
+</body>
+</html>

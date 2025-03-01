@@ -1,0 +1,300 @@
+databaseChangeLog:
+  # Users and Roles
+  - changeSet:
+      id: 001-create-roles
+      author: your-name
+      changes:
+        - createTable:
+            tableName: roles
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+
+  - changeSet:
+      id: 002-create-users
+      author: your-name
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(120)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: username
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_users_roles
+                    references: roles(id)
+
+  - changeSet:
+      id: 003-insert-default-roles
+      author: your-name
+      changes:
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: "ADMIN"
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: "USER"
+
+  # Cars and Related Tables
+  - changeSet:
+      id: 004-create-car-details
+      author: your-name
+      changes:
+        - createTable:
+            tableName: car_details
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(2000)
+              - column:
+                  name: color
+                  type: varchar(20)
+              - column:
+                  name: seating_capacity
+                  type: int
+              - column:
+                  name: fuel_type
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: ALTER TABLE car_details ADD CONSTRAINT check_fuel_type CHECK (fuel_type IN ('PETROL', 'DIESEL', 'ELECTRIC', 'HYBRID'));
+
+  - changeSet:
+      id: 005-create-cars
+      author: your-name
+      changes:
+        - createTable:
+            tableName: cars
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: brand
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: model
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: year
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: mileage
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: decimal(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: car_details_id
+                  type: bigint
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_car_details
+                    references: car_details(id)
+
+  - changeSet:
+      id: 006-create-car-images
+      author: your-name
+      changes:
+        - createTable:
+            tableName: car_images
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: file_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: file_type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: file_content
+                  type: bytea
+                  constraints:
+                    nullable: false
+              - column:
+                  name: car_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_car_images_car
+                    references: cars(id)
+
+  # Services
+  - changeSet:
+      id: 007-create-services
+      author: your-name
+      changes:
+        - createTable:
+            tableName: services
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: price
+                  type: decimal(10,2)
+
+  - changeSet:
+      id: 008-create-car-service
+      author: your-name
+      changes:
+        - createTable:
+            tableName: car_service
+            columns:
+              - column:
+                  name: car_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_car_service_car
+                    references: cars(id)
+              - column:
+                  name: service_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_car_service_service
+                    references: services(id)
+        - addPrimaryKey:
+            tableName: car_service
+            columnNames: car_id, service_id
+            constraintName: pk_car_service
+
+  # Rentals
+  - changeSet:
+      id: 009-create-rentals
+      author: your-name
+      changes:
+        - createTable:
+            tableName: rentals
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_rental_user
+                    references: users(id)
+              - column:
+                  name: car_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_rental_car
+                    references: cars(id)
+              - column:
+                  name: start_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: decimal(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rental_status
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: ALTER TABLE rentals ADD CONSTRAINT check_rental_status CHECK (rental_status IN ('PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED'));
